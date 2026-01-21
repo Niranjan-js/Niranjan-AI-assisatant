@@ -6,6 +6,12 @@
 
 import sys, math, random, time, os
 from datetime import datetime, timedelta
+
+from chatbot_logic import chatbot_reply
+from voice_tools import text_to_speech_tool
+from mastery_tools import master_ecommerce_builder, master_coding_architect
+from tech_tools import security_audit_tool, system_health_diagnostic
+from control_tools import system_control_tool
 try:
     import psutil
 except:
@@ -29,11 +35,11 @@ def clamp(v, lo, hi): return max(lo, min(hi, v))
 def safe_now_str(): return datetime.now().strftime("%Y%m%d_%H%M%S")
 
 THEMES = {
-    "blue": {"bg": (5, 12, 20), "accent": (60, 200, 255), "glow": (60,200,255,180)},
-    "red": {"bg": (18, 6, 8), "accent": (255,110,90), "glow": (255,110,90,180)},
-    "green": {"bg": (6, 18, 12), "accent": (80,220,120), "glow": (80,220,120,180)}
+    "ocean": {"bg": (10, 20, 35), "accent": (0, 210, 255), "glow": (0, 210, 255, 120), "glass": "rgba(20, 35, 50, 180)"},
+    "cyber": {"bg": (15, 10, 25), "accent": (255, 0, 150), "glow": (255, 0, 150, 120), "glass": "rgba(30, 20, 45, 180)"},
+    "emerald": {"bg": (8, 25, 20), "accent": (50, 255, 150), "glow": (50, 255, 150, 120), "glass": "rgba(20, 40, 35, 180)"}
 }
-THEME_ORDER = ["blue","red","green"]
+THEME_ORDER = ["ocean", "cyber", "emerald"]
 
 # --------------------- Background Worker for Performance ---------------------
 class SystemWorker(QObject):
@@ -160,7 +166,8 @@ class CameraWidget(QFrame):
         self.setStyleSheet("QFrame { border-radius:8px; } QLabel{ color:#DCECFB; }")
         layout = QVBoxLayout(self); layout.setContentsMargins(8,8,8,8)
         self.title = SectionTitle("Live Camera Feed")
-        self.video_label = QLabel("Camera: Offline"); self.video_label.setAlignment(Qt.AlignCenter); self.video_label.setMinimumHeight(180)
+        self.video_label = QLabel("NEURAL SIGHT: OFFLINE"); self.video_label.setAlignment(Qt.AlignCenter); self.video_label.setMinimumHeight(180)
+        self.video_label.setStyleSheet("background: rgba(0,0,0,50); border-radius: 10px; color: #3cc8ff; font-weight: bold;")
         layout.addWidget(self.title); layout.addWidget(self.video_label,1)
         global cv2
         try:
@@ -207,12 +214,17 @@ class CameraWidget(QFrame):
 class ProcessListWidget(QFrame):
     def __init__(self):
         super().__init__()
-        self.setStyleSheet("""
-            QListWidget { background: transparent; border: none; color: #DCECFB; font-size: 11px; }
-            QListWidget::item { padding: 3px; }
+        self.setStyleSheet(f"""
+            QFrame {{ 
+                background: {THEMES[NovaHUD.instance().theme_key]['glass'] if hasattr(NovaHUD, 'instance') else 'rgba(20,30,45,180)'};
+                border: 1px solid rgba(255,255,255,20);
+                border-radius: 12px; 
+            }}
+            QListWidget {{ background: transparent; border: none; color: #DCECFB; font-size: 11px; }}
+            QListWidget::item {{ padding: 3px; border-bottom: 1px solid rgba(255,255,255,10); }}
         """)
-        layout = QVBoxLayout(self); layout.setContentsMargins(8,8,8,8)
-        layout.addWidget(SectionTitle("Top Processes"))
+        layout = QVBoxLayout(self); layout.setContentsMargins(10,10,10,10)
+        layout.addWidget(SectionTitle("CORE PROCESSES"))
         self.list_widget = QListWidget()
         self.uptime_label = QLabel("Uptime: --"); self.uptime_label.setStyleSheet("color: #A0C0E0; font-size: 11px; margin-top: 4px;")
         layout.addWidget(self.list_widget, 1); layout.addWidget(self.uptime_label)
@@ -270,7 +282,7 @@ class NeonBar(QWidget):
 class EnergyCore(QWidget):
     # (Unchanged)
     def __init__(self):
-        super().__init__(); self.phase=0.0; self.rings=5; self.speed=1.0; self.glow_intensity=1.0; self.theme=THEMES['blue']
+        super().__init__(); self.phase=0.0; self.rings=5; self.speed=1.0; self.glow_intensity=1.0; self.theme=THEMES['ocean']
         self.setMinimumSize(420,420); self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
     def set_theme(self, k): self.theme=THEMES.get(k,self.theme); self.update()
     def set_speed(self, v): self.speed=max(0.1,float(v))
@@ -298,7 +310,7 @@ class EnergyCore(QWidget):
 
 class AnimatedGridBackground(QWidget):
     # (Unchanged)
-    def __init__(self,theme_key='blue'):
+    def __init__(self,theme_key='ocean'):
         super().__init__(); self.offset=0.0; self.num_particles=18; self.grid_spacing=40; self.grid_opacity=18
         self.particles=[(random.random(),random.random(),random.random()*2+0.2) for _ in range(self.num_particles)]
         self.timer=QTimer(self); self.timer.timeout.connect(self.step); self.timer.start(33)
@@ -316,7 +328,7 @@ class AnimatedGridBackground(QWidget):
         self.update()
     def paintEvent(self,event):
         p=QPainter(self); p.setRenderHint(QPainter.Antialiasing); rect=self.rect(); w,h=rect.width(),rect.height()
-        theme=THEMES.get(self.theme_key,THEMES['blue']); p.fillRect(rect,QColor(*theme['bg']))
+        theme=THEMES.get(self.theme_key,THEMES['ocean']); p.fillRect(rect,QColor(*theme['bg']))
         p.setPen(QColor(*theme['accent'],self.grid_opacity)); spacing=self.grid_spacing; ofs=int(self.offset)%spacing
         for x in range(-spacing,w+spacing,spacing): p.drawLine(x+ofs,0,x+ofs,h)
         for y in range(-spacing,h+spacing,spacing): p.drawLine(0,y+ofs,w,y+ofs)
@@ -468,7 +480,7 @@ class NovaHUD(QMainWindow):
         self.setWindowTitle("NIRANJAN HUD — v2.2")
         self.resize(1280, 800)
         self.settings = {"speed":1.0,"glow":1.0,"rings":5,"particles":18,"grid_spacing":40,"grid_opacity":18}
-        self.theme_index=0; self.theme_key=THEME_ORDER[self.theme_index]
+        self.theme_index=2; self.theme_key=THEME_ORDER[self.theme_index]
         
         self.setup_ui()
         self.setup_timers_and_threads()
@@ -479,35 +491,61 @@ class NovaHUD(QMainWindow):
     def setup_ui(self):
         central = QWidget(); self.setCentralWidget(central)
         root = QVBoxLayout(central); root.setContentsMargins(6,6,6,6); root.setSpacing(8)
-        title = TitleBar("NIRANJAN VISION INTERFACE 2.2", self.cycle_theme, self.toggle_console, self.fake_voice, self.open_settings)
+        title = TitleBar("NIRANJAN ADVANCED INDUSTRY INTERFACE v3.0", self.cycle_theme, self.toggle_console, self.fake_voice, self.open_settings)
         root.addWidget(title)
         self.bg_widget = AnimatedGridBackground(self.theme_key); self.bg_widget.setParent(central); self.bg_widget.lower()
-        body = QGridLayout(); body.setSpacing(10); root.addLayout(body,1)
+        body = QGridLayout(); body.setSpacing(15); root.addLayout(body,1)
+        
+        # Glassmorphism Card Style
+        glass_style = f"""
+            QFrame {{
+                background-color: {THEMES[self.theme_key]['glass']};
+                border: 1px solid rgba(255, 255, 255, 30);
+                border-radius: 15px;
+            }}
+        """
         
         # Left Side
-        left_card=QFrame(); left_card.setStyleSheet("QFrame{background:rgba(10,14,20,220);border-radius:10px;}"); left_layout=QVBoxLayout(left_card); left_layout.setContentsMargins(8,8,8,8)
-        left_layout.addWidget(SectionTitle("SYSTEM METRICS")); self.cpu_util=NeonBar("CPU UTILIZATION"); left_layout.addWidget(self.cpu_util)
-        self.cpu_temp=NeonBar("CPU TEMPERATURE"); left_layout.addWidget(self.cpu_temp); self.battery=NeonBar("BATTERY"); left_layout.addWidget(self.battery)
+        left_card=QFrame(); left_card.setStyleSheet(glass_style); left_layout=QVBoxLayout(left_card); left_layout.setContentsMargins(12,12,12,12)
+        left_layout.addWidget(SectionTitle("SYSTEM DIAGNOSTICS")); self.cpu_util=NeonBar("CPU LOAD"); left_layout.addWidget(self.cpu_util)
+        self.cpu_temp=NeonBar("CORE TEMP"); left_layout.addWidget(self.cpu_temp); self.battery=NeonBar("ENERGY LEVEL"); left_layout.addWidget(self.battery)
         self.process_list=ProcessListWidget(); left_layout.addWidget(self.process_list,1); self.camera=CameraWidget(); left_layout.addWidget(self.camera,0); body.addWidget(left_card,0,0,2,1)
         
         # Center
         self.energy = EnergyCore(); body.addWidget(self.energy,0,1,2,1)
 
         # Right Side
-        right_top=QFrame(); right_top.setStyleSheet("QFrame{background:rgba(10,14,20,220);border-radius:10px;}"); rt_layout=QVBoxLayout(right_top); rt_layout.setContentsMargins(8,8,8,8)
-        rt_layout.addWidget(SectionTitle("STORAGE & NETWORK")); self.mem=NeonBar("MEMORY USAGE",style='pink'); rt_layout.addWidget(self.mem)
-        self.disk=NeonBar("DISK USAGE",style='green'); rt_layout.addWidget(self.disk); self.weather=WeatherWidget(); rt_layout.addWidget(self.weather)
+        right_top=QFrame(); right_top.setStyleSheet(glass_style); rt_layout=QVBoxLayout(right_top); rt_layout.setContentsMargins(12,12,12,12)
+        rt_layout.addWidget(SectionTitle("NETWORK & RESOURCES")); self.mem=NeonBar("MEMORY LOAD",style='pink'); rt_layout.addWidget(self.mem)
+        self.disk=NeonBar("STORAGE STATUS",style='green'); rt_layout.addWidget(self.disk); self.weather=WeatherWidget(); rt_layout.addWidget(self.weather)
         net_box=QHBoxLayout(); self.net_up=QLabel("Up: 0.0 MB/s"); self.net_dn=QLabel("Down: 0.0 MB/s"); self.net_up.setStyleSheet("color:#DCECFB;"); self.net_dn.setStyleSheet("color:#DCECFB;")
         net_box.addWidget(self.net_up); net_box.addWidget(self.net_dn); rt_layout.addLayout(net_box)
-        self.clockLbl=QLabel("--:--:--"); self.clockLbl.setStyleSheet("font-size:26px;color:#EAF6FF;"); self.clockLbl.setAlignment(Qt.AlignRight); rt_layout.addWidget(self.clockLbl)
+        self.clockLbl=QLabel("--:--:--"); self.clockLbl.setStyleSheet("font-size:32px; color:#3cc8ff; font-weight:bold;"); self.clockLbl.setAlignment(Qt.AlignRight); rt_layout.addWidget(self.clockLbl)
         self.console=QTextEdit(); self.console.setReadOnly(True); self.console.setFixedHeight(180); self.console.hide(); rt_layout.addWidget(self.console); body.addWidget(right_top,0,2,1,1)
 
-        right_bottom=QFrame(); rb_layout=QVBoxLayout(right_bottom); rb_layout.setContentsMargins(8,8,8,8); rb_layout.addWidget(SectionTitle("ACTIONS"))
-        self.btn_cam_toggle=QPushButton("Start Camera"); self.btn_cam_toggle.clicked.connect(self.toggle_camera); self.btn_snapshot=QPushButton("Snapshot"); self.btn_snapshot.clicked.connect(self.camera_snapshot)
-        self.btn_screenshot=QPushButton("HUD Screenshot"); self.btn_screenshot.clicked.connect(self.save_screenshot)
-        self.btn_screen_share=QPushButton("🔍 Screen Vision"); self.btn_screen_share.clicked.connect(self.open_screen_share)
-        self.btn_chatbot=QPushButton("💬 AI Chatbot"); self.btn_chatbot.clicked.connect(self.open_chatbot)
-        for b in (self.btn_cam_toggle,self.btn_snapshot,self.btn_screenshot,self.btn_screen_share,self.btn_chatbot): b.setFixedHeight(34); rb_layout.addWidget(b)
+        right_bottom=QFrame(); right_bottom.setStyleSheet(glass_style); rb_layout=QVBoxLayout(right_bottom); rb_layout.setContentsMargins(12,12,12,12); rb_layout.addWidget(SectionTitle("SYSTEM PROTOCOLS"))
+        self.btn_cam_toggle=QPushButton("👁️ ACTIVATE VISION"); self.btn_cam_toggle.clicked.connect(self.toggle_camera); self.btn_snapshot=QPushButton("📸 CAPTURE SNAP"); self.btn_snapshot.clicked.connect(self.camera_snapshot)
+        self.btn_screenshot=QPushButton("🖥️ INTERFACE SNAP"); self.btn_screenshot.clicked.connect(self.save_screenshot)
+        self.btn_screen_share=QPushButton("🔍 SCAN SCREEN"); self.btn_screen_share.clicked.connect(self.open_screen_share)
+        self.btn_chatbot=QPushButton("💬 NEURAL CHAT"); self.btn_chatbot.clicked.connect(self.open_chatbot)
+        
+        btn_style = """
+            QPushButton {
+                background: rgba(60, 200, 255, 20);
+                border: 1px solid rgba(60, 200, 255, 60);
+                border-radius: 8px;
+                color: #B0E0FF;
+                font-weight: bold;
+                letter-spacing: 0.8px;
+            }
+            QPushButton:hover {
+                background: rgba(60, 200, 255, 50);
+                border-color: #3cc8ff;
+                color: #fff;
+            }
+        """
+        for b in (self.btn_cam_toggle,self.btn_snapshot,self.btn_screenshot,self.btn_screen_share,self.btn_chatbot): 
+            b.setStyleSheet(btn_style); b.setFixedHeight(38); rb_layout.addWidget(b)
         body.addWidget(right_bottom,1,2,1,1)
 
         body.setColumnStretch(0,1); body.setColumnStretch(1,2); body.setColumnStretch(2,1); body.setRowStretch(0,2); body.setRowStretch(1,1)
@@ -598,20 +636,35 @@ class NovaHUD(QMainWindow):
             self.append_console(f"[NIRANJAN] Screen Vision error: {e}")
 
     def open_chatbot(self):
-        """Open AI Chatbot window"""
+        """Open an interactive offline chatbot dialog with tool execution support"""
         try:
-            import subprocess
-            import sys
-            script_path = os.path.join(os.path.dirname(__file__), "niranjan_chatbot_gui.py")
-            if os.path.exists(script_path):
-                subprocess.Popen([sys.executable, script_path])
-                self.append_console("[NIRANJAN] AI Chatbot window opened.")
-            else:
-                QMessageBox.warning(self, "AI Chatbot", "niranjan_chatbot_gui.py not found!")
-                self.append_console("[NIRANJAN] AI Chatbot file not found.")
+            from PySide6.QtWidgets import QInputDialog
+            text, ok = QInputDialog.getText(self, "Niranjan Neural Chat", "Sir, how can I assist you?")
+            
+            if ok and text:
+                self.append_console(f"[YOU] {text}")
+                response = chatbot_reply(text)
+                
+                # Handling Triggers in GUI Chat
+                exec_res = ""
+                if "[TRIGGER_ECOMMERCE]" in str(response):
+                    store, ok1 = QInputDialog.getText(self, "Ecommerce Build", "Store Name:")
+                    niche, ok2 = QInputDialog.getText(self, "Ecommerce Build", "Niche (e.g. Fashion):")
+                    if ok1 and ok2: 
+                        self.append_console("[NIRANJAN] Initializing Ecommerce Build...")
+                        exec_res = master_ecommerce_builder(store, niche)
+                    else: exec_res = "Ecommerce build aborted."
+                elif "[TRIGGER_SHUTDOWN]" in str(response): exec_res = system_control_tool("shutdown")
+                elif "[TRIGGER_RESTART]" in str(response): exec_res = system_control_tool("restart")
+                elif "[TRIGGER_WIFI_TOGGLE]" in str(response): exec_res = system_control_tool("toggle_wifi")
+                elif "[TRIGGER_SECURITY_AUDIT]" in str(response): exec_res = security_audit_tool()
+                elif "[TRIGGER_SYSTEM_HEALTH]" in str(response): exec_res = system_health_diagnostic()
+                
+                final_res = exec_res if exec_res else response
+                self.append_console(f"[NIRANJAN] {final_res}")
+                text_to_speech_tool(str(final_res))
         except Exception as e:
-            QMessageBox.warning(self, "AI Chatbot", f"Error: {str(e)}")
-            self.append_console(f"[NIRANJAN] AI Chatbot error: {e}")
+            self.append_console(f"[NIRANJAN] Chatbot error: {e}")
 
     def resizeEvent(self, event): self.bg_widget.setGeometry(self.centralWidget().rect()); super().resizeEvent(event)
     def append_console(self, text): self.console.append(f"[{datetime.now().strftime('%H:%M:%S')}] {text}")

@@ -7,75 +7,81 @@ from livekit.agents import function_tool
 @function_tool
 def system_control_tool(action: str):
     """
-    Controls system power and core apps. 
-    Actions: 'shutdown', 'restart', 'open_whatsapp', 'open_messages', 'open_youtube'.
+    Advanced System Control Procotol for power, network, and hardware.
+    Actions: 'shutdown', 'restart', 'open_youtube', 'open_whatsapp', 'toggle_wifi', 'open_camera', 'capture'.
     """
     try:
         if action == "shutdown":
-            # os.system("shutdown /s /t 1") # Safety: Just return command for now to avoid killing agent
-            return "🖥️ System Shutdown command prepared. (Simulated to prevent agent disconnect)"
+            # Action: Shutdown PC
+            os.system("shutdown /s /t 5")
+            return "🖥️ Protocol Initiated: System will shutdown in 5 seconds."
             
         elif action == "restart":
-            return "🖥️ System Restart command prepared."
-            
-        elif action == "open_whatsapp":
-            webbrowser.open("https://web.whatsapp.com")
-            return "📱 Opening WhatsApp Web in your browser."
-            
-        elif action == "open_messages":
-            # For Windows, we can try to open the Phone Link app or generic web messages
-            subprocess.Popen("start ms-chat:", shell=True) # Windows 11 Chat/Teams
-            return "💬 Opening Windows Messaging/Chat app."
+            # Action: Restart PC
+            os.system("shutdown /r /t 5")
+            return "🖥️ Protocol Initiated: System will restart in 5 seconds."
             
         elif action == "open_youtube":
             webbrowser.open("https://www.youtube.com")
-            return "📺 Opening YouTube in your browser."
+            return "📺 YouTube Interface: Online and opened in default browser."
+
+        elif action == "open_whatsapp":
+            webbrowser.open("https://web.whatsapp.com")
+            return "📱 WhatsApp Interface: Online and opened in default browser."
             
-        return f"Unknown system action: {action}"
+        elif action == "toggle_wifi":
+            # Note: This is a restricted action on some systems
+            subprocess.run(["netsh", "interface", "set", "interface", "Wi-Fi", "admin=disabled"], shell=True)
+            return "📡 Network Protocol: Wi-Fi interface status has been modified."
+            
+        elif action == "open_camera":
+            # Open camera feed for 3 seconds
+            try:
+                import cv2
+                cap = cv2.VideoCapture(0)
+                if not cap.isOpened(): return "❌ Error: Camera hardware offline or in use."
+                ret, frame = cap.read()
+                if ret:
+                    cv2.imshow("Niranjan Vision Feed", frame)
+                    cv2.waitKey(3000)
+                    cv2.destroyAllWindows()
+                cap.release()
+                return "👁️ Vision Sensors: Camera feed cycle complete."
+            except ImportError:
+                return "❌ Error: 'opencv-python' is not installed for camera access."
+
+        elif action == "capture":
+            # Capture and save image
+            try:
+                import cv2
+                cap = cv2.VideoCapture(0)
+                ret, frame = cap.read()
+                if ret:
+                    path = "niranjan_capture.jpg"
+                    cv2.imwrite(path, frame)
+                    cap.release()
+                    return f"📸 Snapshot Saved: {path}"
+                cap.release()
+                return "❌ Error: Capture failed."
+            except ImportError:
+                return "❌ Error: 'opencv-python' is not installed."
+                
+        return f"⚠️ Unknown System Protocol: {action}"
     except Exception as e:
-        return f"System Control Error: {e}"
+        return f"❌ System Control Error: {e}"
 
 @function_tool
 def web_page_builder_tool(title: str, description: str):
     """
     Master Programmer Mode: Creates a professional HTML/CSS/JS webpage based on description.
-    Syncs with VS Code for immediate work.
     """
     try:
-        base_path = os.path.join(os.path.expanduser("~"), "Documents", "Niranjan_Web_Projects")
-        project_name = title.lower().replace(" ", "_")
-        path = os.path.join(base_path, project_name)
+        path = os.path.join(os.path.expanduser("~"), "Documents", "Niranjan_Web_Projects", title.lower().replace(" ", "_"))
+        if not os.path.exists(path): os.makedirs(path)
         
-        if not os.path.exists(path):
-            os.makedirs(path)
-            
-        html_content = f"""<!DOCTYPE html>
-<html>
-<head>
-    <title>{title}</title>
-    <style>
-        body {{ font-family: 'Segoe UI', sans-serif; background: #0a0e14; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
-        .container {{ text-align: center; border: 1px solid #3cc8ff; padding: 2rem; border-radius: 15px; box-shadow: 0 0 20px rgba(60,200,255,0.2); }}
-        h1 {{ color: #3cc8ff; }}
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>{title}</h1>
-        <p>{description}</p>
-        <p>Built by Niranjan AI v3.0</p>
-    </div>
-</body>
-</html>"""
-        
-        index_path = os.path.join(path, "index.html")
-        with open(index_path, "w", encoding="utf-8") as f:
-            f.write(html_content)
-            
-        # Sync with VS Code
+        html = f"<html><head><title>{title}</title><style>body{{background:#000;color:#0f0;font-family:monospace;text-align:center;padding:50px;}}</style></head><body><h1>{title}</h1><p>{description}</p></body></html>"
+        with open(os.path.join(path, "index.html"), "w") as f: f.write(html)
         subprocess.Popen(["code", path], shell=True)
-        
-        return f"🚀 **Web Project '{title}' Created!**\n- Location: {path}\n- Status: Synced with VS Code.\n- Live Action: Opening implementation environment now."
-        
+        return f"🚀 Project '{title}' created and synced with VS Code."
     except Exception as e:
         return f"Web Builder Error: {e}"

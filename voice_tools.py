@@ -28,6 +28,7 @@ def text_to_speech_tool(text: str, voice_preset: str = "realistic"):
         # Save to file for the agent to potentially play or send
         output_file = "voice_output.mp3"
         engine.save_to_file(text, output_file)
+        engine.say(text) # Speak immediately
         engine.runAndWait()
         
         return f"🔊 Voice Synthesis Complete ({voice_preset}):\n- Generated audio from text: '{text[:50]}...'\n- File saved to: {output_file}"

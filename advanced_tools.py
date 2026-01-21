@@ -117,3 +117,24 @@ def coding_agent_tool(project_name: str, task_description: str):
         return f"Created project '{project_name}' at {project_path} and opened VS Code."
     except Exception as e:
         return f"Coding agent error: {e}"
+
+@function_tool
+def send_whatsapp_tool(phone_number: str, message: str):
+    """
+    Sends a WhatsApp message instantly. 
+    Requires pywhatkit and being logged into WhatsApp Web in the default browser.
+    Phone number should include country code (e.g., '+91XXXXXXXXXX').
+    """
+    try:
+        import pywhatkit
+        # sendwhatmsg_instantly opens the browser and sends the message
+        # wait_time is how long it waits for the page to load before sending (default 15s)
+        pywhatkit.sendwhatmsg_instantly(
+            phone_no=phone_number,
+            message=message,
+            wait_time=15,
+            tab_close=True
+        )
+        return f"WhatsApp message scheduled/sent to {phone_number}."
+    except Exception as e:
+        return f"WhatsApp automation error: {e}"
